@@ -57,83 +57,137 @@ dbNode3.connect(err => {
     console.log('Connected to Node 3 database');
 });
 
-// Fetch all games from all nodes
-app.get('/games', async (req, res) => {
-    const query = 'SELECT * FROM Game';
-
-    const fetchGamesFromNode = (db) => {
-        return new Promise((resolve, reject) => {
-            db.query(query, (err, results) => {
-                if (err) reject(err);
-                resolve(results);
-            });
-        });
-    };
-
-    try {
-        const node1Games = await fetchGamesFromNode(dbNode1);
-        const node2Games = await fetchGamesFromNode(dbNode2);
-        const node3Games = await fetchGamesFromNode(dbNode3);
-
-        const allGames = [...node1Games, ...node2Games, ...node3Games];
-        res.json(allGames);
-    } catch (err) {
-        res.status(500).send('Error fetching games from nodes');
-    }
-});
-
-// Fetch games plyayable on windows
-app.get('/games-windows', async (req, res) => {
-    const query = "SELECT * FROM Game WHERE os = 'windows'";
-
-    const fetchGamesFromNode = (db) => {
-        return new Promise((resolve, reject) => {
-            db.query(query, (err, results) => {
-                if (err) reject(err);
-                resolve(results);
-            });
-        });
-    };
-
-    try {
-        const node1Games = await fetchGamesFromNode(dbNode1);
-        const node2Games = await fetchGamesFromNode(dbNode2);
-        const node3Games = await fetchGamesFromNode(dbNode3);
-
-        const allGames = [...node1Games, ...node2Games, ...node3Games];
-        res.json(allGames);
-    } catch (err) {
-        res.status(500).send('Error fetching games from nodes');
-    }
-});
-
-// Fetch games plyayable on multi-os
-app.get('/games-multios', async (req, res) => {
-    const query = "SELECT * FROM Game";
-
-    const fetchGamesFromNode = (db) => {
-        return new Promise((resolve, reject) => {
-            db.query(query, (err, results) => {
-                if (err) reject(err);
-                resolve(results);
-            });
-        });
-    };
-
-    try {
-        const node1Games = await fetchGamesFromNode(dbNode1);
-        const node2Games = await fetchGamesFromNode(dbNode2);
-        const node3Games = await fetchGamesFromNode(dbNode3);
-
-        const allGames = [...node1Games, ...node2Games, ...node3Games];
-        res.json(allGames);
-    } catch (err) {
-        res.status(500).send('Error fetching games from nodes');
-    }
-});
-
 // Start server
 const PORT = 3000;
 app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
+
+
+
+// Concurrent transactions in two or more nodes reading the same data item
+app.get('/concurrent-case1', async (req, res) => {
+    try {
+        const { targetId } = req.query;
+
+        if (!targetId) {
+            return res.status(400).json({
+                success: false,
+                message: 'Target ID is required',
+            });
+        }
+
+        const results = await Promise.all([
+            dbNode1.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
+            dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
+            dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
+        ]);
+
+        res.json({
+            success: true,
+            message: 'Concurrent read operations completed successfully',
+            results: results.map(([rows], index) => ({
+                node: `Node ${index + 1}`,
+                data: rows,
+            })),
+        });
+    } catch (error) {
+        console.error('Error during concurrent read simulation:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error during concurrent read simulation',
+            error: error.message,
+        });
+    }
+});
+
+// One transaction writing while others read
+app.post('/concurrent-case2', async (req, res) => {
+    try {
+        const { targetId, newName } = req.body;
+
+        if (!targetId || !newName) {
+            return res.status(400).json({
+                success: false,
+                message: 'Target ID and new name are required',
+            });
+        }
+
+        const writePromise = dbNode1.promise().query(
+            'UPDATE Game SET name = ? WHERE appid = ?',
+            [newName, targetId]
+        );
+
+        const readPromises = [
+            dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
+            dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
+        ];
+
+        const [writeResult, ...readResults] = await Promise.all([writePromise, ...readPromises]);
+
+        res.json({
+            success: true,
+            message: 'Concurrent write and read operations completed successfully',
+            writeResult: { affectedRows: writeResult[0].affectedRows },
+            readResults: readResults.map(([rows], index) => ({
+                node: `Node ${index + 2}`,
+                data: rows,
+            })),
+        });
+    } catch (error) {
+        console.error('Error during concurrent write and read simulation:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error during concurrent write and read simulation',
+            error: error.message,
+        });
+    }
+});
+
+// Concurrent transactions writing the same data item
+app.post('/concurrent-case3', async (req, res) => {
+    try {
+        const { targetId, newName } = req.body;
+
+        if (!targetId || !newName) {
+            return res.status(400).json({
+                success: false,
+                message: 'Target ID and new name are required',
+            });
+        }
+
+        const writePromises = [
+            dbNode1.promise().query(
+                'UPDATE Game SET name = ? WHERE appid = ?',
+                [`${newName} (Node 1)`, targetId]
+            ),
+            dbNode2.promise().query(
+                'UPDATE Game SET name = ? WHERE appid = ?',
+                [`${newName} (Node 2)`, targetId]
+            ),
+            dbNode3.promise().query(
+                'UPDATE Game SET name = ? WHERE appid = ?',
+                [`${newName} (Node 3)`, targetId]
+            ),
+        ];
+
+        const results = await Promise.all(writePromises);
+
+        res.json({
+            success: true,
+            message: 'Concurrent write operations completed successfully',
+            results: results.map((result, index) => ({
+                node: `Node ${index + 1}`,
+                affectedRows: result[0].affectedRows,
+            })),
+        });
+    } catch (error) {
+        console.error('Error during concurrent write simulation:', error.message);
+        res.status(500).json({
+            success: false,
+            message: 'Error during concurrent write simulation',
+            error: error.message,
+        });
+    }
+});
+
