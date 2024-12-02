@@ -17,17 +17,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
     // Fetch games playable on Windows
     fetchGamesWindowsBtn.addEventListener('click', async () => {
-        const response = await fetch('/games');
+        const response = await fetch('/games-windows');
         const games = await response.json();
-        const windowsGames = games.filter(game => game.os_support === 'Windows');
+        const windowsGames = games.filter(game => game.os === 'Windows');
         displayGamesInTable(windowsGames);
     });
 
     // Fetch games playable on multi-OS
     fetchGamesMultiOsBtn.addEventListener('click', async () => {
-        const response = await fetch('/games');
+        const response = await fetch('/games-multios');
         const games = await response.json();
-        const multiOsGames = games.filter(game => game.os_support.includes('Windows') || game.os_support.includes('Mac') || game.os_support.includes('Linux'));
+        const multiOsGames = games.filter(game => game.os.includes('Windows') || game.os.includes('Mac') || game.os.includes('Linux'));
         displayGamesInTable(multiOsGames);
     });
 
@@ -37,8 +37,10 @@ document.addEventListener('DOMContentLoaded', () => {
             <table>
                 <thead>
                     <tr>
-                        <th>App Id</th>
+                        <th>App ID</th>
                         <th>Name</th>
+                        <th>Price</th>
+                        <th>Genre</th>
                         <th>Release Date</th>
                         <th>OS Support</th>
                     </tr>
@@ -48,8 +50,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         <tr>
                             <td>${game.appid}</td>
                             <td>${game.name}</td>
+                            <td>${game.price}</td>
+                            <td>${game.genres}</td>
                             <td>${game.release_date}</td>
-                            <td>${game.os_support}</td>
+                            <td>${game.os}</td>
                         </tr>
                     `).join('')}
                 </tbody>

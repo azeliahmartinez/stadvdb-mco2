@@ -59,7 +59,57 @@ dbNode3.connect(err => {
 
 // Fetch all games from all nodes
 app.get('/games', async (req, res) => {
-    const query = 'SELECT * FROM games';
+    const query = 'SELECT * FROM Game';
+
+    const fetchGamesFromNode = (db) => {
+        return new Promise((resolve, reject) => {
+            db.query(query, (err, results) => {
+                if (err) reject(err);
+                resolve(results);
+            });
+        });
+    };
+
+    try {
+        const node1Games = await fetchGamesFromNode(dbNode1);
+        const node2Games = await fetchGamesFromNode(dbNode2);
+        const node3Games = await fetchGamesFromNode(dbNode3);
+
+        const allGames = [...node1Games, ...node2Games, ...node3Games];
+        res.json(allGames);
+    } catch (err) {
+        res.status(500).send('Error fetching games from nodes');
+    }
+});
+
+// Fetch games plyayable on windows
+app.get('/games-windows', async (req, res) => {
+    const query = "SELECT * FROM Game WHERE os = 'windows'";
+
+    const fetchGamesFromNode = (db) => {
+        return new Promise((resolve, reject) => {
+            db.query(query, (err, results) => {
+                if (err) reject(err);
+                resolve(results);
+            });
+        });
+    };
+
+    try {
+        const node1Games = await fetchGamesFromNode(dbNode1);
+        const node2Games = await fetchGamesFromNode(dbNode2);
+        const node3Games = await fetchGamesFromNode(dbNode3);
+
+        const allGames = [...node1Games, ...node2Games, ...node3Games];
+        res.json(allGames);
+    } catch (err) {
+        res.status(500).send('Error fetching games from nodes');
+    }
+});
+
+// Fetch games plyayable on multi-os
+app.get('/games-multios', async (req, res) => {
+    const query = "SELECT * FROM Game";
 
     const fetchGamesFromNode = (db) => {
         return new Promise((resolve, reject) => {
