@@ -119,6 +119,7 @@ app.post('/concurrent-case2', async (req, res) => {
         );
 
         const readPromises = [
+            dbNode1.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
         ];
@@ -129,9 +130,9 @@ app.post('/concurrent-case2', async (req, res) => {
             success: true,
             message: 'Concurrent write and read operations completed successfully',
             writeResult: { affectedRows: writeResult[0].affectedRows },
-            readResults: readResults.map(([rows], index) => ({
-                node: `Node ${index + 2}`,
-                data: rows,
+            readResults: readResults.map((result, index) => ({
+                node: `Node ${index + 1}`,  // Adjusting the node index to start from Node 1
+                data: result[0],
             })),
         });
     } catch (error) {
@@ -143,6 +144,7 @@ app.post('/concurrent-case2', async (req, res) => {
         });
     }
 });
+
 
 // Concurrent transactions writing the same data item
 app.post('/concurrent-case3', async (req, res) => {
@@ -159,15 +161,15 @@ app.post('/concurrent-case3', async (req, res) => {
         const writePromises = [
             dbNode1.promise().query(
                 'UPDATE Game SET name = ? WHERE appid = ?',
-                [`${newName} (Node 1)`, targetId]
+                [`${newName}`, targetId]
             ),
             dbNode2.promise().query(
                 'UPDATE Game SET name = ? WHERE appid = ?',
-                [`${newName} (Node 2)`, targetId]
+                [`${newName}`, targetId]
             ),
             dbNode3.promise().query(
                 'UPDATE Game SET name = ? WHERE appid = ?',
-                [`${newName} (Node 3)`, targetId]
+                [`${newName}`, targetId]
             ),
         ];
 
