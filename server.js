@@ -145,7 +145,7 @@ app.post('/concurrent-case2', async (req, res) => {
     }
 });
 
-
+// Concurrent transactions writing the same data item
 // Concurrent transactions writing the same data item
 app.post('/concurrent-case3', async (req, res) => {
     try {
@@ -158,38 +158,42 @@ app.post('/concurrent-case3', async (req, res) => {
             });
         }
 
+        // Perform write operations concurrently on all nodes
         const writePromises = [
-            dbNode1.promise().query(
-                'UPDATE Game SET name = ? WHERE appid = ?',
-                [`${newName}`, targetId]
-            ),
-            dbNode2.promise().query(
-                'UPDATE Game SET name = ? WHERE appid = ?',
-                [`${newName}`, targetId]
-            ),
-            dbNode3.promise().query(
-                'UPDATE Game SET name = ? WHERE appid = ?',
-                [`${newName}`, targetId]
-            ),
+            dbNode1.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
+            dbNode2.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
+            dbNode3.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
         ];
 
-        const results = await Promise.all(writePromises);
+        const writeResults = await Promise.all(writePromises);
+
+        // Perform read operations concurrently after the writes
+        const readPromises = [
+            dbNode1.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
+            dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
+            dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
+        ];
+
+        const readResults = await Promise.all(readPromises);
 
         res.json({
             success: true,
-            message: 'Concurrent write operations completed successfully',
-            results: results.map((result, index) => ({
+            message: 'Concurrent write and read operations completed successfully',
+            writeResults: writeResults.map((result, index) => ({
                 node: `Node ${index + 1}`,
                 affectedRows: result[0].affectedRows,
             })),
+            readResults: readResults.map((result, index) => ({
+                node: `Node ${index + 1}`,
+                data: result[0],
+            })),
         });
     } catch (error) {
-        console.error('Error during concurrent write simulation:', error.message);
+        console.error('Error during concurrent write and read simulation:', error.message);
         res.status(500).json({
             success: false,
-            message: 'Error during concurrent write simulation',
+            message: 'Error during concurrent write and read simulation',
             error: error.message,
         });
     }
 });
-
