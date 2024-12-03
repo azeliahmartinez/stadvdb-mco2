@@ -126,7 +126,6 @@ app.get('/concurrent-case1', async (req, res) => {
 });
 
 
-
 // One transaction writing while others read
 app.post('/concurrent-case2', async (req, res) => {
     try {
@@ -139,6 +138,9 @@ app.post('/concurrent-case2', async (req, res) => {
             });
         }
 
+        // Set READ COMMITTED isolation level and perform the write operation on Node 1
+        await dbNode1.promise().query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
+        
         // Perform the update on Node 1
         const [writeResult] = await dbNode1.promise().query(
             'UPDATE Game SET name = ? WHERE appid = ?',
@@ -157,6 +159,13 @@ app.post('/concurrent-case2', async (req, res) => {
             'UPDATE Game SET name = ? WHERE appid = ?',
             [newName, targetId]
         );
+
+        // Set READ COMMITTED isolation level before reading data from all nodes
+        await Promise.all([
+            dbNode1.promise().query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED'),
+            dbNode2.promise().query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED'),
+            dbNode3.promise().query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED')
+        ]);
 
         // Read data from all nodes
         const readResults = await Promise.all([
@@ -185,7 +194,7 @@ app.post('/concurrent-case2', async (req, res) => {
 });
 
 
-// Concurrent transactions writing the same data item
+
 // Concurrent transactions writing the same data item
 app.post('/concurrent-case3', async (req, res) => {
     try {
@@ -198,33 +207,48 @@ app.post('/concurrent-case3', async (req, res) => {
             });
         }
 
-        // Perform the update and replicate to all nodes
-        const replicationResults = await dataReplicate(
-            'UPDATE Game SET name = ? WHERE appid = ?',
-            [newName, targetId]
-        );
+        // Set the SERIALIZABLE isolation level for all nodes before the write operations
+        await Promise.all([
+            dbNode1.promise().query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE'),
+            dbNode2.promise().query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE'),
+            dbNode3.promise().query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE'),
+        ]);
 
-        // Read updated data from all nodes
-        const readResults = await Promise.all([
+        // Perform write operations concurrently on all nodes
+        const writePromises = [
+            dbNode1.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
+            dbNode2.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
+            dbNode3.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
+        ];
+
+        const writeResults = await Promise.all(writePromises);
+
+        // Perform read operations concurrently after the writes
+        const readPromises = [
             dbNode1.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
-        ]);
+        ];
+
+        const readResults = await Promise.all(readPromises);
 
         res.json({
             success: true,
-            message: 'Concurrent write operations with replication completed successfully',
-            replicationResults,
-            readResults: readResults.map(([rows], index) => ({
+            message: 'Concurrent write and read operations completed successfully',
+            writeResults: writeResults.map((result, index) => ({
                 node: `Node ${index + 1}`,
-                data: rows,
+                affectedRows: result[0].affectedRows,
+            })),
+            readResults: readResults.map((result, index) => ({
+                node: `Node ${index + 1}`,
+                data: result[0],
             })),
         });
     } catch (error) {
-        console.error('Error during concurrent write simulation:', error.message);
+        console.error('Error during concurrent write and read simulation:', error.message);
         res.status(500).json({
             success: false,
-            message: 'Error during concurrent write simulation',
+            message: 'Error during concurrent write and read simulation',
             error: error.message,
         });
     }
