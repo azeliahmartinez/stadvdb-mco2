@@ -5,41 +5,38 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>Steam Games Management</title>
     <link rel="stylesheet" href="style.css">
+    <link href="https://fonts.googleapis.com/css2?family=Poppins:wght@300;400;600&display=swap" rel="stylesheet">
     <script src="script.js"></script>
+    
+
 </head>
 <body>
-    <header class="header">
+    <div class="container">
         <h1>Steam Games Management</h1>
-    </header>
 
-    <main>
-        <!-- View Games Section -->
-        <section class="section" id="view-games">
-            <h2>View Games</h2>
-            <button id="fetch-games-btn">Fetch All Games</button>
-            <button id="fetch-games-windows-btn">Fetch Games playable exclusively on MS Windows</button>
-            <button id="fetch-games-multios-btn">Fetch Games playable on multiple OS (Windows, Mac, Linux)</button>
-            <div id="games-list" class="games-list"></div>
-        </section>
+        <div class="form-group">
+            <input type="text" placeholder="Enter Target ID" id="input-case1" />
+            <button id="simulate-case1" class="btn">Simulate Concurrency Case #1</button>
+        </div>
 
-        <!-- Simulate Transactions Section -->
-        <section class="section" id="simulate">
-            <h2>Simulate Transactions</h2>
-            <button id="simulate-read">Simulate Concurrent Reads</button>
-            <button id="simulate-read-write">Simulate Read & Write</button>
-            <button id="simulate-writes">Simulate Concurrent Writes</button>
-            <div id="simulation-results" class="simulation-results"></div>
-        </section>
+        <div class="form-group">
+            <input type="text" placeholder="Enter Target ID" id="input-case2-id" />
+            <input type="text" placeholder="Enter New Name" id="input-case2-name" />
+            <button id="simulate-case2" class="btn">Simulate Concurrency Case #2</button>
+        </div>
 
-         <!-- Crash and Recovery Section -->
-         <section class="section" id="simulate">
-            <h2>Crash and Recovery</h2>
-            
-        </section>
-    </main>
+        <div class="form-group">
+            <input type="text" placeholder="Enter Target ID" id="input-case3-id" />
+            <input type="text" placeholder="Enter New Name" id="input-case3-name" />
+            <button id="simulate-case3" class="btn">Simulate Concurrency Case #3</button>
+        </div>
 
-    <footer class="footer">
-        <p>&copy; 2024 Steam Games Management. All rights reserved.</p>
-    </footer>
+        <div id="results">
+            <h2>Results</h2>
+            <p id="result-node1">Node 1: </p>
+            <p id="result-node2">Node 2: </p>
+            <p id="result-node3">Node 3: </p>
+        </div>
+    </div>
 </body>
 </html>
