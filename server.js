@@ -63,6 +63,30 @@ app.listen(PORT, () => {
     console.log(`Server is running on http://localhost:${PORT}`);
 });
 
+/**
+ * Function to replicate a query across all nodes
+ * @param {string} query - The SQL query to execute
+ * @param {Array} params - Parameters for the query
+ * @returns {Promise<Array>} - Resolves with the results from all nodes
+ */
+async function dataReplicate(query, params = []) {
+    try {
+        const results = await Promise.all([
+            dbNode1.promise().query(query, params),
+            dbNode2.promise().query(query, params),
+            dbNode3.promise().query(query, params),
+        ]);
+
+        return results.map((result, index) => ({
+            node: `Node ${index + 1}`,
+            affectedRows: result[0].affectedRows,
+        }));
+    } catch (error) {
+        console.error('Error during data replication:', error.message);
+        throw new Error('Data replication failed.');
+    }
+}
+
 
 
 // Concurrent transactions in two or more nodes reading the same data item
@@ -101,6 +125,8 @@ app.get('/concurrent-case1', async (req, res) => {
     }
 });
 
+
+
 // One transaction writing while others read
 app.post('/concurrent-case2', async (req, res) => {
     try {
@@ -113,26 +139,39 @@ app.post('/concurrent-case2', async (req, res) => {
             });
         }
 
-        const writePromise = dbNode1.promise().query(
+        // Perform the update on Node 1
+        const [writeResult] = await dbNode1.promise().query(
             'UPDATE Game SET name = ? WHERE appid = ?',
             [newName, targetId]
         );
 
-        const readPromises = [
+        if (writeResult.affectedRows === 0) {
+            return res.status(404).json({
+                success: false,
+                message: 'No matching record found to update on Node 1.',
+            });
+        }
+
+        // Replicate the update to all nodes
+        const replicationResults = await dataReplicate(
+            'UPDATE Game SET name = ? WHERE appid = ?',
+            [newName, targetId]
+        );
+
+        // Read data from all nodes
+        const readResults = await Promise.all([
             dbNode1.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
-        ];
-
-        const [writeResult, ...readResults] = await Promise.all([writePromise, ...readPromises]);
+        ]);
 
         res.json({
             success: true,
             message: 'Concurrent write and read operations completed successfully',
-            writeResult: { affectedRows: writeResult[0].affectedRows },
-            readResults: readResults.map((result, index) => ({
-                node: `Node ${index + 1}`,  // Adjusting the node index to start from Node 1
-                data: result[0],
+            replicationResults,
+            readResults: readResults.map(([rows], index) => ({
+                node: `Node ${index + 1}`,
+                data: rows,
             })),
         });
     } catch (error) {
@@ -144,6 +183,7 @@ app.post('/concurrent-case2', async (req, res) => {
         });
     }
 });
+
 
 // Concurrent transactions writing the same data item
 // Concurrent transactions writing the same data item
@@ -158,41 +198,33 @@ app.post('/concurrent-case3', async (req, res) => {
             });
         }
 
-        // Perform write operations concurrently on all nodes
-        const writePromises = [
-            dbNode1.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
-            dbNode2.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
-            dbNode3.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
-        ];
+        // Perform the update and replicate to all nodes
+        const replicationResults = await dataReplicate(
+            'UPDATE Game SET name = ? WHERE appid = ?',
+            [newName, targetId]
+        );
 
-        const writeResults = await Promise.all(writePromises);
-
-        // Perform read operations concurrently after the writes
-        const readPromises = [
+        // Read updated data from all nodes
+        const readResults = await Promise.all([
             dbNode1.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
-        ];
-
-        const readResults = await Promise.all(readPromises);
+        ]);
 
         res.json({
             success: true,
-            message: 'Concurrent write and read operations completed successfully',
-            writeResults: writeResults.map((result, index) => ({
+            message: 'Concurrent write operations with replication completed successfully',
+            replicationResults,
+            readResults: readResults.map(([rows], index) => ({
                 node: `Node ${index + 1}`,
-                affectedRows: result[0].affectedRows,
-            })),
-            readResults: readResults.map((result, index) => ({
-                node: `Node ${index + 1}`,
-                data: result[0],
+                data: rows,
             })),
         });
     } catch (error) {
-        console.error('Error during concurrent write and read simulation:', error.message);
+        console.error('Error during concurrent write simulation:', error.message);
         res.status(500).json({
             success: false,
-            message: 'Error during concurrent write and read simulation',
+            message: 'Error during concurrent write simulation',
             error: error.message,
         });
     }

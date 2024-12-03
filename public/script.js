@@ -1,7 +1,5 @@
 document.addEventListener('DOMContentLoaded', () => {
   
-
-
     // Simulate transactions
 
     // Simulate Case #1
@@ -36,15 +34,18 @@ document.addEventListener('DOMContentLoaded', () => {
                 tableBody.innerHTML = ''; // Clear previous rows
     
                 if (!nodeData || nodeData.length === 0) {
+                    // No data found for this node
                     const messageRow = document.createElement('tr');
                     const messageCell = document.createElement('td');
-                    messageCell.colSpan = 3;
+                    messageCell.colSpan = 3; // Adjust based on your table's column count
                     messageCell.textContent = "No data found for this node.";
                     messageRow.appendChild(messageCell);
                     tableBody.appendChild(messageRow);
     
-                    document.getElementById(tableId).style.display = 'none';
+                    // Show the table (or ensure it's visible) for consistency
+                    document.getElementById(tableId).style.display = 'table';
                 } else {
+                    // Populate the table with the node's data
                     nodeData.forEach(entry => {
                         const row = document.createElement('tr');
     
@@ -63,6 +64,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         tableBody.appendChild(row);
                     });
     
+                    // Show the table after populating
                     document.getElementById(tableId).style.display = 'table';
                 }
             });
@@ -71,8 +73,6 @@ document.addEventListener('DOMContentLoaded', () => {
             alert('Failed to fetch results. Please try again.');
         }
     });
-    
-    
     
 
     // Simulate Case #2
