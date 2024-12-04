@@ -215,5 +215,62 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
+    
+     // Utility function for handling fetch errors
+     const handleFetchError = (error, caseNumber) => {
+        console.error(`Error during Case #${caseNumber} simulation:`, error.message);
+        alert(`Failed to simulate Case #${caseNumber}. Please try again.`);
+    };
+
+    // Simulate Case #1 Failure: Central Node Failure
+    document.getElementById('simulate-case1-failure').addEventListener('click', async () => {
+        try {
+            const response = await fetch('/simulate-case1-failure');
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+            const result = await response.json();
+            document.getElementById('result-case1-message').textContent = result.message;
+        } catch (error) {
+            handleFetchError(error, 1);
+        }
+    });
+
+    // Simulate Case #2 Failure: Node 2 or Node 3 Failure
+    document.getElementById('simulate-case2-failure').addEventListener('click', async () => {
+        try {
+            const response = await fetch('/simulate-case2-failure');
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+            const result = await response.json();
+            document.getElementById('result-case2-message').textContent = result.message;
+        } catch (error) {
+            handleFetchError(error, 2);
+        }
+    });
+
+    // Simulate Case #3 Failure: Writing to Central Node
+    document.getElementById('simulate-case3-failure').addEventListener('click', async () => {
+        try {
+            const response = await fetch('/simulate-case3-failure');
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+            const result = await response.json();
+            document.getElementById('result-case3-message').textContent = result.message;
+        } catch (error) {
+            handleFetchError(error, 3);
+        }
+    });
+
+    // Simulate Case #4 Failure: Writing to Node 2 or Node 3
+    document.getElementById('simulate-case4-failure').addEventListener('click', async () => {
+        try {
+            const response = await fetch('/simulate-case4-failure');
+            if (!response.ok) throw new Error(`HTTP Error: ${response.status}`);
+            const result = await response.json();
+            document.getElementById('result-case4-message').textContent = result.message;
+        } catch (error) {
+            handleFetchError(error, 4);
+        }
+    });
+
+
+
 
 });

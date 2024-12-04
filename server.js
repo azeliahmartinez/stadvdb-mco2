@@ -15,6 +15,7 @@ const app = express();
 // Middleware
 app.use(bodyParser.json());
 app.use(express.static(path.join(__dirname, 'public')));
+app.use(express.json());
 
 // Database connections for 3 nodes
 const dbNode1 = mysql.createConnection({
@@ -253,3 +254,4 @@ app.post('/concurrent-case3', async (req, res) => {
         });
     }
 });
+
