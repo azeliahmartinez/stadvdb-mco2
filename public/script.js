@@ -68,6 +68,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     document.getElementById(tableId).style.display = 'table';
                 }
             });
+            document.getElementById('input-case1').value = '';
         } catch (error) {
             console.error('Error during Case #1 simulation:', error.message);
             alert('Failed to fetch results. Please try again.');
@@ -137,6 +138,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById(tableId).style.display = 'table'; // Show the table
             });
     
+            document.getElementById('input-case2-id').value = '';
+            document.getElementById('input-case2-name').value = '';
             alert('Case #2 simulated successfully.');
         } catch (error) {
             console.error('Error during Case #2 simulation:', error.message);
@@ -208,6 +211,8 @@ document.addEventListener('DOMContentLoaded', () => {
                 document.getElementById(tableId).style.display = 'table'; // Show the table
             });
 
+            document.getElementById('input-case3-id').value = '';
+            document.getElementById('input-case3-name').value = '';
             alert('Case #3 simulated successfully.');
         } catch (error) {
             console.error('Error during Case #3 simulation:', error.message);
