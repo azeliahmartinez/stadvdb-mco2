@@ -37,7 +37,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     // No data found for this node
                     const messageRow = document.createElement('tr');
                     const messageCell = document.createElement('td');
-                    messageCell.colSpan = 3; // Adjust based on your table's column count
+                    messageCell.colSpan = 4; // Adjust based on your table's column count
                     messageCell.textContent = "No data found for this node.";
                     messageRow.appendChild(messageCell);
                     tableBody.appendChild(messageRow);
@@ -60,6 +60,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const genresCell = document.createElement('td');
                         genresCell.textContent = entry.genres;
                         row.appendChild(genresCell);
+
+                        const osCell = document.createElement('td');
+                        osCell.textContent = entry.os;
+                        row.appendChild(osCell);
     
                         tableBody.appendChild(row);
                     });
@@ -111,7 +115,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!data || data.length === 0) {
                     const messageRow = document.createElement('tr');
                     const messageCell = document.createElement('td');
-                    messageCell.colSpan = 3;
+                    messageCell.colSpan = 4;
                     messageCell.textContent = "No data found for this node.";
                     messageRow.appendChild(messageCell);
                     tableBody.appendChild(messageRow);
@@ -130,6 +134,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const genresCell = document.createElement('td');
                         genresCell.textContent = entry.genres;
                         row.appendChild(genresCell);
+
+                        const osCell = document.createElement('td');
+                        osCell.textContent = entry.os;
+                        row.appendChild(osCell);
     
                         tableBody.appendChild(row);
                     });
@@ -184,7 +192,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 if (!data || data.length === 0) {
                     const messageRow = document.createElement('tr');
                     const messageCell = document.createElement('td');
-                    messageCell.colSpan = 3;
+                    messageCell.colSpan = 4;
                     messageCell.textContent = "No data found for this node.";
                     messageRow.appendChild(messageCell);
                     tableBody.appendChild(messageRow);
@@ -203,6 +211,10 @@ document.addEventListener('DOMContentLoaded', () => {
                         const genresCell = document.createElement('td');
                         genresCell.textContent = entry.genres;
                         row.appendChild(genresCell);
+
+                        const osCell = document.createElement('td');
+                        osCell.textContent = entry.os;
+                        row.appendChild(osCell);
 
                         tableBody.appendChild(row);
                     });
