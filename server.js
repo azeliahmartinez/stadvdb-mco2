@@ -77,10 +77,13 @@ function connectNodes() {
 
 connectNodes();
 
-// Log Operation
+// Log Operation (fetch the old value before update)
+// Ensure logOperation is an async function
+// Log Operation with correct old value
 async function logOperation(operationType, targetId, oldValue, newValue) {
     const logQuery = 'INSERT INTO operation_logs (operation_type, target_id, old_value, new_value) VALUES (?, ?, ?, ?)';
     try {
+        // Log the operation with both old and new values
         await dbNode1.promise().query(logQuery, [operationType, targetId, oldValue, newValue]);
         log('Operation logged successfully');
     } catch (error) {
@@ -88,15 +91,39 @@ async function logOperation(operationType, targetId, oldValue, newValue) {
     }
 }
 
-// Recovery Process
+// Simulating failure recovery case
+async function handleWriteOperation(targetId, newName) {
+    try {
+        // Fetch the current value before performing the update
+        const [currentData] = await dbNode1.promise().query('SELECT name FROM Game WHERE appid = ?', [targetId]);
+        const oldValue = currentData[0]?.name;
+
+        if (!oldValue) {
+            return; // If no old value is found, exit
+        }
+
+        // Log the write operation with the old and new values
+        await logOperation('WRITE', targetId, oldValue, newName);  // Log the write operation
+
+        // Continue with the update after logging
+        await dbNode1.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]);
+        log(`Write operation for appid ${targetId} logged with new name ${newName}`);
+    } catch (error) {
+        log(`Error handling write operation: ${error.message}`);
+    }
+}
+
+
+// Recovery Process - Include old and new values
 async function recoverNode() {
     log('Starting recovery process...');
     try {
         const [logsFromDb] = await dbNode1.promise().query('SELECT * FROM operation_logs ORDER BY log_id ASC');
         for (const logRecord of logsFromDb) {
             if (logRecord.operation_type === 'WRITE') {
+                // Update the database using oldValue if necessary, but ensure newValue is also updated
                 await dbNode1.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [logRecord.new_value, logRecord.target_id]);
-                log(`Recovered WRITE operation on appid ${logRecord.target_id}`);
+                log(`Recovered WRITE operation on appid ${logRecord.target_id}: Old Value: ${logRecord.old_value}, New Value: ${logRecord.new_value}`);
             }
         }
         log('Recovery completed.');
@@ -104,6 +131,7 @@ async function recoverNode() {
         log(`Error during recovery: ${error.message}`);
     }
 }
+
 
 // Failure Simulation Endpoints
 app.get('/simulate-case1-failure', (req, res) => {
@@ -177,10 +205,16 @@ app.get('/recover', async (req, res) => {
     }
 });
 
-// Display logs endpoint
-app.get('/logs', (req, res) => {
-    res.json({ logs });
+// Display logs with both old and new values
+app.get('/logs', async (req, res) => {
+    try {
+        const [logsFromDb] = await dbNode1.promise().query('SELECT * FROM operation_logs ORDER BY log_id ASC');
+        res.json({ logs: logsFromDb });
+    } catch (error) {
+        res.status(500).json({ success: false, message: 'Failed to fetch logs', error: error.message });
+    }
 });
+
 
 
 async function dataReplicate(query, params = []) {
@@ -215,7 +249,7 @@ app.get('/concurrent-case1', async (req, res) => {
         ]);
 
         // Log read operations
-        logOperation('READ', targetId, null, null);  // Log as read operation (no old or new value)
+        await logOperation('READ', targetId, null, null);  // Log as read operation (no old or new value)
 
         res.json({
             success: true,
@@ -242,16 +276,22 @@ app.post('/concurrent-case2', async (req, res) => {
         // Set READ COMMITTED isolation level and perform the write operation on Node 1
         await dbNode1.promise().query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
         
+        // Fetch the current value before performing the update
+        const [currentData] = await dbNode1.promise().query('SELECT name FROM Game WHERE appid = ?', [targetId]);
+        const oldValue = currentData[0]?.name;
+
+        if (!oldValue) {
+            return res.status(404).json({ success: false, message: `No data found for appid ${targetId}` });
+        }
+
+        // Log the write operation with the old and new values
+        await logOperation('WRITE', targetId, oldValue, newName); 
+
         // Use dataReplicate function to update all three nodes
         const replicationResults = await dataReplicate('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]);
 
-        // Log the write operation
-        replicationResults.forEach(() => {
-            logOperation('WRITE', targetId, null, newName);  // Log the write operation
-        });
-
         // Perform read operations after the write operation
-        const readResults = await Promise.all([
+        const readResults = await Promise.all([ 
             dbNode1.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
