@@ -37,35 +37,85 @@ let dbNode3 = mysql.createConnection({
     port: process.env.DB_PORT_NODE3,
 });
 
+// Global variable for storing logs
+let logs = [];
+
+// Log function to store and display logs
+function log(message) {
+    const timestamp = new Date().toISOString();
+    const logMessage = `[${timestamp}] ${message}`;
+    logs.push(logMessage);
+    console.log(logMessage); // Logs in terminal
+}
+
 // Connect to all databases
 function connectNodes() {
     dbNode1.connect(err => {
-        if (err) console.error('Failed to connect to Node 1:', err.message);
-        else console.log('Connected to Node 1 database');
+        if (err) {
+            log(`Failed to connect to Node 1: ${err.message}`);
+        } else {
+            log('Connected to Node 1 database');
+        }
     });
 
     dbNode2.connect(err => {
-        if (err) console.error('Failed to connect to Node 2:', err.message);
-        else console.log('Connected to Node 2 database');
+        if (err) {
+            log(`Failed to connect to Node 2: ${err.message}`);
+        } else {
+            log('Connected to Node 2 database');
+        }
     });
 
     dbNode3.connect(err => {
-        if (err) console.error('Failed to connect to Node 3:', err.message);
-        else console.log('Connected to Node 3 database');
+        if (err) {
+            log(`Failed to connect to Node 3: ${err.message}`);
+        } else {
+            log('Connected to Node 3 database');
+        }
     });
 }
 
 connectNodes();
 
+// Log Operation
+async function logOperation(operationType, targetId, oldValue, newValue) {
+    const logQuery = 'INSERT INTO operation_logs (operation_type, target_id, old_value, new_value) VALUES (?, ?, ?, ?)';
+    try {
+        await dbNode1.promise().query(logQuery, [operationType, targetId, oldValue, newValue]);
+        log('Operation logged successfully');
+    } catch (error) {
+        log(`Error logging operation: ${error.message}`);
+    }
+}
+
+// Recovery Process
+async function recoverNode() {
+    log('Starting recovery process...');
+    try {
+        const [logsFromDb] = await dbNode1.promise().query('SELECT * FROM operation_logs ORDER BY log_id ASC');
+        for (const logRecord of logsFromDb) {
+            if (logRecord.operation_type === 'WRITE') {
+                await dbNode1.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [logRecord.new_value, logRecord.target_id]);
+                log(`Recovered WRITE operation on appid ${logRecord.target_id}`);
+            }
+        }
+        log('Recovery completed.');
+    } catch (error) {
+        log(`Error during recovery: ${error.message}`);
+    }
+}
+
 // Failure Simulation Endpoints
 app.get('/simulate-case1-failure', (req, res) => {
     dbNode1.end();
+    log('Central Node (Node 1) is now offline. Please wait for recovery.');
     res.json({ message: 'Central Node (Node 1) is now offline. Please wait for recovery.' });
 });
 
 app.get('/simulate-case2-failure', (req, res) => {
     dbNode2.end();
     dbNode3.end();
+    log('Nodes 2 and 3 are now offline. Please wait for recovery.');
     res.json({ message: 'Nodes 2 and 3 are now offline. Please wait for recovery.' });
 });
 
@@ -73,6 +123,7 @@ app.get('/simulate-case3-failure', (req, res) => {
     dbNode1.query = () => {
         throw new Error('Write failure to Central Node simulated.');
     };
+    log('Central Node (Node 1) write operations are failing. Please wait for recovery.');
     res.json({ message: 'Central Node (Node 1) write operations are failing. Please wait for recovery.' });
 });
 
@@ -83,34 +134,71 @@ app.get('/simulate-case4-failure', (req, res) => {
     dbNode3.query = () => {
         throw new Error('Write failure to Node 3 simulated.');
     };
+    log('Write operations to Node 2 and Node 3 are failing. Please wait for recovery.');
     res.json({ message: 'Write operations to Node 2 and Node 3 are failing. Please wait for recovery.' });
 });
 
-app.get('/recover', (req, res) => {
-    dbNode1 = mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        port: process.env.DB_PORT_NODE1,
-    });
-    dbNode2 = mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        port: process.env.DB_PORT_NODE2,
-    });
-    dbNode3 = mysql.createConnection({
-        host: process.env.DB_HOST,
-        user: process.env.DB_USER,
-        password: process.env.DB_PASSWORD,
-        database: process.env.DB_NAME,
-        port: process.env.DB_PORT_NODE3,
-    });
-    connectNodes();
-    res.json({ message: 'All nodes have been recovered successfully.' });
+// Recover Central Node and Replay Logged Operations
+app.get('/recover', async (req, res) => {
+    try {
+        // Reinitialize connections for all nodes
+        dbNode1 = mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT_NODE1,
+        });
+        dbNode2 = mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT_NODE2,
+        });
+        dbNode3 = mysql.createConnection({
+            host: process.env.DB_HOST,
+            user: process.env.DB_USER,
+            password: process.env.DB_PASSWORD,
+            database: process.env.DB_NAME,
+            port: process.env.DB_PORT_NODE3,
+        });
+
+        // Reconnect all nodes
+        connectNodes();
+
+        // Replay logged operations for recovery
+        await recoverNode();
+
+        res.json({ success: true, message: 'All nodes have been recovered successfully, and logs have been replayed.' });
+    } catch (error) {
+        log(`Error during recovery: ${error.message}`);
+        res.status(500).json({ success: false, message: 'Recovery failed', error: error.message });
+    }
 });
+
+// Display logs endpoint
+app.get('/logs', (req, res) => {
+    res.json({ logs });
+});
+
+
+async function dataReplicate(query, params = []) {
+    try {
+        const results = await Promise.all([
+            dbNode1.promise().query(query, params),
+            dbNode2.promise().query(query, params),
+            dbNode3.promise().query(query, params),
+        ]);
+        return results.map((result, index) => ({
+            node: `Node ${index + 1}`,
+            affectedRows: result[0].affectedRows,
+        }));
+    } catch (error) {
+        console.error('Error during data replication:', error.message);
+        throw new Error('Data replication failed.');
+    }
+}
 
 // Concurrent Transactions Endpoints
 // Case 1: Concurrent transactions reading the same data item
@@ -125,6 +213,10 @@ app.get('/concurrent-case1', async (req, res) => {
             dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
         ]);
+
+        // Log read operations
+        logOperation('READ', targetId, null, null);  // Log as read operation (no old or new value)
+
         res.json({
             success: true,
             message: 'Concurrent read operations completed successfully',
@@ -146,23 +238,29 @@ app.post('/concurrent-case2', async (req, res) => {
         if (!targetId || !newName) {
             return res.status(400).json({ success: false, message: 'Target ID and new name are required' });
         }
-        const replicationResults = await Promise.all([
-            dbNode1.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
-            dbNode2.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
-            dbNode3.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
-        ]);
+
+        // Set READ COMMITTED isolation level and perform the write operation on Node 1
+        await dbNode1.promise().query('SET TRANSACTION ISOLATION LEVEL READ COMMITTED');
+        
+        // Use dataReplicate function to update all three nodes
+        const replicationResults = await dataReplicate('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]);
+
+        // Log the write operation
+        replicationResults.forEach(() => {
+            logOperation('WRITE', targetId, null, newName);  // Log the write operation
+        });
+
+        // Perform read operations after the write operation
         const readResults = await Promise.all([
             dbNode1.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
         ]);
+
         res.json({
             success: true,
             message: 'Concurrent write and read operations completed successfully',
-            replicationResults: replicationResults.map(([result], index) => ({
-                node: `Node ${index + 1}`,
-                affectedRows: result.affectedRows,
-            })),
+            replicationResults: replicationResults,
             readResults: readResults.map(([rows], index) => ({
                 node: `Node ${index + 1}`,
                 data: rows,
@@ -174,6 +272,7 @@ app.post('/concurrent-case2', async (req, res) => {
     }
 });
 
+
 // Case 3: Concurrent transactions writing the same data item
 app.post('/concurrent-case3', async (req, res) => {
     try {
@@ -181,17 +280,32 @@ app.post('/concurrent-case3', async (req, res) => {
         if (!targetId || !newName) {
             return res.status(400).json({ success: false, message: 'Target ID and new name are required' });
         }
+
+        // Set the isolation level to SERIALIZABLE to ensure full isolation during the transaction
+        await dbNode1.promise().query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+        await dbNode2.promise().query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+        await dbNode3.promise().query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
+
+        // Perform the write operation on all three nodes
         const writePromises = [
             dbNode1.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
             dbNode2.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
             dbNode3.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
         ];
         const writeResults = await Promise.all(writePromises);
+
+        // Log the write operation
+        writeResults.forEach(() => {
+            logOperation('WRITE', targetId, null, newName);  // Log the write operation
+        });
+
+        // Perform read operations after the write operation
         const readResults = await Promise.all([
             dbNode1.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode2.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
             dbNode3.promise().query('SELECT * FROM Game WHERE appid = ?', [targetId]),
         ]);
+
         res.json({
             success: true,
             message: 'Concurrent write and read operations completed successfully',
@@ -213,6 +327,7 @@ app.post('/concurrent-case3', async (req, res) => {
         });
     }
 });
+
 
 // Start Server
 const PORT = process.env.PORT || 3000;

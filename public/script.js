@@ -270,7 +270,23 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     });
 
-
-
-
+    document.getElementById('recoverBtn').addEventListener('click', async () => {
+        try {
+            const response = await fetch('/recover');
+            const result = await response.json();
+            if (result.success) {
+                alert('System recovered successfully!');
+    
+                // Reset all the result case messages to "Waiting for simulation"
+                document.getElementById('result-case1-message').textContent = "Waiting for simulation...";
+                document.getElementById('result-case2-message').textContent = "Waiting for simulation...";
+                document.getElementById('result-case3-message').textContent = "Waiting for simulation...";
+                document.getElementById('result-case4-message').textContent = "Waiting for simulation...";
+            } else {
+                alert('Recovery failed: ' + result.message);
+            }
+        } catch (error) {
+            alert('Error during recovery: ' + error.message);
+        }
+    });
 });
