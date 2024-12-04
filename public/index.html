@@ -88,45 +88,47 @@
         <!-- Global Failure & Recovery Simulation -->
         <div id="global-failure">
             <h2>Global Failure & Recovery Simulation</h2>
-
-            <div class="form-group">
-                <button id="simulate-case1-failure" class="btn">Simulate Case #1: Central Node Failure</button>
-            </div>
-
-            <div class="form-group">
-                <button id="simulate-case2-failure" class="btn">Simulate Case #2: Node 2 or Node 3 Failure</button>
-            </div>
-
-            <div class="form-group">
-                <button id="simulate-case3-failure" class="btn">Simulate Case #3: Failure in Writing to Central Node</button>
-            </div>
-
-            <div class="form-group">
-                <button id="simulate-case4-failure" class="btn">Simulate Case #4: Failure in Writing to Node 2/3</button>
-            </div>
-
-            <!-- Results for Global Failure Simulation -->
-            <div id="global-failure-results">
-                <h3>Global Failure Results</h3>
-                <div id="global-result-case1">
-                    <h4>Case #1: Central Node Failure</h4>
-                    <p id="result-case1-message">Waiting for simulation...</p>
+            <div class="global-failure-grid">
+                <!-- Buttons Section -->
+                <div id="global-failure-buttons">
+                    <div class="form-group">
+                        <button id="simulate-case1-failure" class="btn">Simulate Case #1: Central Node Failure</button>
+                    </div>
+                    <div class="form-group">
+                        <button id="simulate-case2-failure" class="btn">Simulate Case #2: Node 2 or Node 3 Failure</button>
+                    </div>
+                    <div class="form-group">
+                        <button id="simulate-case3-failure" class="btn">Simulate Case #3: Failure in Writing to Central Node</button>
+                    </div>
+                    <div class="form-group">
+                        <button id="simulate-case4-failure" class="btn">Simulate Case #4: Failure in Writing to Node 2/3</button>
+                    </div>
                 </div>
-                <div id="global-result-case2">
-                    <h4>Case #2: Node 2 or Node 3 Failure</h4>
-                    <p id="result-case2-message">Waiting for simulation...</p>
-                </div>
-                <div id="global-result-case3">
-                    <h4>Case #3: Failure in Writing to Central Node</h4>
-                    <p id="result-case3-message">Waiting for simulation...</p>
-                </div>
-                <div id="global-result-case4">
-                    <h4>Case #4: Failure in Writing to Node 2/3</h4>
-                    <p id="result-case4-message">Waiting for simulation...</p>
+        
+                <!-- Results Section -->
+                <div id="global-failure-results">
+                    <h3>Global Failure Results</h3>
+                    <div id="global-result-case1">
+                        <h4>Case #1: Central Node Failure</h4>
+                        <p id="result-case1-message">Waiting for simulation...</p>
+                    </div>
+                    <div id="global-result-case2">
+                        <h4>Case #2: Node 2 or Node 3 Failure</h4>
+                        <p id="result-case2-message">Waiting for simulation...</p>
+                    </div>
+                    <div id="global-result-case3">
+                        <h4>Case #3: Failure in Writing to Central Node</h4>
+                        <p id="result-case3-message">Waiting for simulation...</p>
+                    </div>
+                    <div id="global-result-case4">
+                        <h4>Case #4: Failure in Writing to Node 2/3</h4>
+                        <p id="result-case4-message">Waiting for simulation...</p>
+                    </div>
                 </div>
                 <button id="recoverBtn">Recover System</button>
             </div>
         </div>
+        
     </div>
         
     

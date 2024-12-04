@@ -19,7 +19,7 @@ body {
 .container {
     background-color: #ffffff;
     width: 80%;
-    max-width: 900px;
+    max-width: 1200px;
     border-radius: 16px;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
     padding: 40px;
@@ -74,7 +74,7 @@ button.btn {
     padding: 12px 25px;
     border: none;
     border-radius: 10px;
-    background-color: #4caf93; /* Soft modern green */
+    background-color: #2a475e; /* Soft modern green */
     color: white;
     font-weight: 500;
     font-size: 1rem;
@@ -84,7 +84,7 @@ button.btn {
 }
 
 button.btn:hover {
-    background-color: #3b8e75;
+    background-color: #1b2838;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
@@ -144,7 +144,7 @@ button.btn:hover {
 
 /* Table Header */
 #results table th {
-    background-color: #4caf93; /* Soft modern green */
+    background-color: #2a475e;
     color: white;
     text-align: left;
     padding: 12px 15px;
@@ -166,7 +166,7 @@ button.btn:hover {
 
 /* Last Row */
 #results table tr:last-child td {
-    border-bottom: none; /* Remove bottom border for the last row */
+    border-bottom: none;
 }
 
 /* Responsive Table */
@@ -200,35 +200,37 @@ button.btn:hover {
     justify-content: space-between;
     align-items: center;
     gap: 15px;
-    flex-wrap: wrap; /* Responsive */
+    flex-wrap: wrap;
+}
+
+.global-failure-grid {
+    display: flex;
+    gap: 20px;
 }
 
 /* Buttons in Global Failure Section */
+#global-failure-buttons {
+    flex: 0 0 40%; 
+}
+
 #global-failure .btn {
-    padding: 12px 25px;
-    border: none;
-    border-radius: 10px;
-    background-color: #4caf93; /* Soft modern green */
-    color: white;
-    font-weight: 500;
-    font-size: 1rem;
-    cursor: pointer;
-    transition: all 0.3s ease;
-    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+    flex: 1;
+    padding: 12px 20px; 
+    border-radius: 8px; 
+    font-size: 1rem; 
+    text-align: left;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1); 
 }
 
 #global-failure .btn:hover {
-    background-color: #3b8e75;
+    background-color: #1b2838;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
 
 /* Results Section for Global Failure Simulation */
 #global-failure-results {
-    margin-top: 30px;
+    flex: 0 0 60%;
     padding: 20px;
-    background-color: #fafafa;
-    border-radius: 12px;
-    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
     text-align: left;
 }
 
@@ -274,7 +276,13 @@ button.btn:hover {
         width: 100%;
     }
 
+    #global-failure-buttons,
     #global-failure-results {
-        padding: 15px;
+        flex: 0 0 auto; 
+        width: 100%;
+    }
+
+    .global-failure-grid {
+        flex-direction: column;
     }
 }
