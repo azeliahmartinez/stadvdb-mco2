@@ -74,7 +74,7 @@ button.btn {
     padding: 12px 25px;
     border: none;
     border-radius: 10px;
-    background-color: #2a475e; /* Soft modern green */
+    background-color: #2a475e; 
     color: white;
     font-weight: 500;
     font-size: 1rem;
@@ -83,7 +83,7 @@ button.btn {
     box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
 
-button.btn:hover {
+button.btn:hover, #recoverBtn:hover {
     background-color: #1b2838;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
 }
@@ -232,6 +232,10 @@ button.btn:hover {
     flex: 0 0 60%;
     padding: 20px;
     text-align: left;
+    display: flex;
+    flex-direction: column;
+    justify-content: space-between;
+    position: relative;
 }
 
 #global-failure-results h3 {
@@ -285,4 +289,19 @@ button.btn:hover {
     .global-failure-grid {
         flex-direction: column;
     }
+}
+
+
+#recoverBtn {
+    margin-top: 12px;
+    padding: 12px 25px;
+    border: none;
+    border-radius: 10px;
+    background-color: #2a475e; 
+    color: white;
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
 }
