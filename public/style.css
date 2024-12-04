@@ -12,7 +12,6 @@ body {
     display: flex;
     justify-content: center;
     align-items: center;
-    height: 100vh;
     color: #333;
 }
 
@@ -178,3 +177,104 @@ button.btn:hover {
     }
 }
 
+/* Global Failure & Recovery Simulation */
+#global-failure {
+    margin-top: 40px;
+    padding: 20px;
+    background-color: #fafafa;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+#global-failure h2 {
+    color: #444;
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 1.5rem;
+}
+
+#global-failure .form-group {
+    margin: 20px 0;
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    gap: 15px;
+    flex-wrap: wrap; /* Responsive */
+}
+
+/* Buttons in Global Failure Section */
+#global-failure .btn {
+    padding: 12px 25px;
+    border: none;
+    border-radius: 10px;
+    background-color: #4caf93; /* Soft modern green */
+    color: white;
+    font-weight: 500;
+    font-size: 1rem;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+#global-failure .btn:hover {
+    background-color: #3b8e75;
+    box-shadow: 0 6px 12px rgba(0, 0, 0, 0.15);
+}
+
+/* Results Section for Global Failure Simulation */
+#global-failure-results {
+    margin-top: 30px;
+    padding: 20px;
+    background-color: #fafafa;
+    border-radius: 12px;
+    box-shadow: 0 2px 6px rgba(0, 0, 0, 0.1);
+    text-align: left;
+}
+
+#global-failure-results h3 {
+    color: #444;
+    margin-bottom: 15px;
+    font-weight: 600;
+    font-size: 1.4rem;
+}
+
+#global-failure-results div {
+    margin-top: 20px;
+}
+
+#global-failure-results h4 {
+    color: #333;
+    font-size: 1.2rem;
+    font-weight: 600;
+    margin-bottom: 10px;
+}
+
+#global-failure-results p {
+    margin: 8px 0;
+    padding: 10px 15px;
+    border-radius: 8px;
+    background-color: #ffffff;
+    font-size: 0.95rem;
+    color: #333;
+    box-shadow: 0 2px 4px rgba(0, 0, 0, 0.05);
+}
+
+/* Responsive Design */
+@media (max-width: 768px) {
+    #global-failure {
+        padding: 15px;
+    }
+
+    #global-failure .form-group {
+        flex-direction: column;
+    }
+
+    #global-failure .btn {
+        width: 100%;
+    }
+
+    #global-failure-results {
+        padding: 15px;
+    }
+}
