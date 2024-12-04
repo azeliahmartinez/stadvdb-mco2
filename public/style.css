@@ -18,8 +18,8 @@ body {
 /* Container */
 .container {
     background-color: #ffffff;
-    width: 60%;
-    max-width: 800px;
+    width: 80%;
+    max-width: 900px;
     border-radius: 16px;
     box-shadow: 0 6px 12px rgba(0, 0, 0, 0.1);
     padding: 40px;
