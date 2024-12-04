@@ -128,7 +128,7 @@ button.btn:hover, #recoverBtn:hover {
 
 /* Table Styling */
 #results table {
-    width: 80%;
+    width: 100%;
     border-collapse: collapse;
     margin-top: 15px;
     margin-bottom: 15px;
