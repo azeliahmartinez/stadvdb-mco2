@@ -326,17 +326,33 @@ app.post('/concurrent-case3', async (req, res) => {
         await dbNode2.promise().query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
         await dbNode3.promise().query('SET TRANSACTION ISOLATION LEVEL SERIALIZABLE');
 
+        // Fetch the old value from the first node (you can pick any node, just need a consistent source)
+        const [currentData] = await dbNode1.promise().query('SELECT name FROM Game WHERE appid = ?', [targetId]);
+        
+        // If no data is found, return an error
+        if (!currentData || currentData.length === 0) {
+            return res.status(404).json({ success: false, message: `No game found with appid ${targetId}` });
+        }
+
+        const oldValue = currentData[0].name;  // Capture the old name
+
         // Perform the write operation on all three nodes
         const writePromises = [
             dbNode1.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
             dbNode2.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
             dbNode3.promise().query('UPDATE Game SET name = ? WHERE appid = ?', [newName, targetId]),
         ];
+
+        // Wait for all write operations to finish
         const writeResults = await Promise.all(writePromises);
 
         // Log the write operation
-        writeResults.forEach(() => {
-            logOperation('WRITE', targetId, null, newName);  // Log the write operation
+        await logOperation('WRITE', targetId, oldValue, newName);
+
+        // Log the write operation for all nodes (you might want to log this for each node separately)
+        writeResults.forEach((result, index) => {
+            console.log(`Node ${index + 1} affected rows:`, result[0].affectedRows);
+            logOperation('WRITE', targetId, oldValue, newName);  // Log for each write
         });
 
         // Perform read operations after the write operation
@@ -367,6 +383,7 @@ app.post('/concurrent-case3', async (req, res) => {
         });
     }
 });
+
 
 
 // Start Server
